@@ -1,5 +1,5 @@
 
-# Mô hình AI train chẩn đoán ung thư não 
+# Mô hình AI chẩn đoán ung thư não 
 
 Cài 2 thư viện:
 

@@ -1,0 +1,134 @@
+import os
+import cv2
+import numpy as np
+import tensorflow as tf
+import shutil
+import imutils
+from tqdm import tqdm
+
+# --- 1. CẤU HÌNH ---
+FOLDER_YES = '/content/drive/MyDrive/image/yes'      # Folder chứa ảnh CÓ U
+# Đổi tên file model thành file mới nhất bạn vừa train
+MODEL_PATH = '/content/drive/MyDrive/image/brain_tumor_PRO.h5' 
+OUTPUT_FOLDER = '/content/drive/MyDrive/image/ket_qua_sai_yes_pro'   # Lưu ra folder mới để dễ so sánh
+THRESHOLD = 0.5  # Ngưỡng (Dưới mức này là AI phán KHÔNG bệnh/Bỏ sót)
+
+# --- 2. HÀM XỬ LÝ ẢNH CAO CẤP (Copy y nguyên từ lúc train) ---
+def ham_xu_ly_xin(img):
+    if img.dtype != 'uint8':
+        img = np.array(img, dtype=np.uint8)
+
+    # 1. Cắt xương sọ
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY) 
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    thresh = cv2.threshold(gray, 45, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.erode(thresh, None, iterations=2)
+    thresh = cv2.dilate(thresh, None, iterations=2)
+    
+    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    
+    if len(cnts) > 0:
+        c = max(cnts, key=cv2.contourArea)
+        extLeft = tuple(c[c[:, :, 0].argmin()][0])
+        extRight = tuple(c[c[:, :, 0].argmax()][0])
+        extTop = tuple(c[c[:, :, 1].argmin()][0])
+        extBot = tuple(c[c[:, :, 1].argmax()][0])
+        new_img = img[extTop[1]:extBot[1], extLeft[0]:extRight[0]]
+    else:
+        new_img = img 
+
+    # 2. Resize giữ tỷ lệ (Padding)
+    desired_size = 128
+    old_size = new_img.shape[:2]
+    ratio = float(desired_size)/max(old_size)
+    new_size = tuple([int(x*ratio) for x in old_size])
+    new_img = cv2.resize(new_img, (new_size[1], new_size[0]))
+    
+    delta_w = desired_size - new_size[1]
+    delta_h = desired_size - new_size[0]
+    top, bottom = delta_h//2, delta_h-(delta_h//2)
+    left, right = delta_w//2, delta_w-(delta_w//2)
+    
+    color = [0, 0, 0]
+    new_img = cv2.copyMakeBorder(new_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+    
+    return new_img
+
+# --- 3. CHUẨN BỊ ---
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
+    print(f"📂 Đã tạo folder kết quả: {OUTPUT_FOLDER}")
+else:
+    print(f"📂 Folder kết quả: {OUTPUT_FOLDER}")
+
+# Load model
+print("🔄 Đang load model PRO...")
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+    print("✅ Load model thành công!")
+except Exception as e:
+    print(f"❌ Lỗi load model: {e}")
+    exit()
+
+# Lấy danh sách ảnh
+all_files = os.listdir(FOLDER_YES)
+image_files = [f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+total_img = len(image_files)
+
+print(f"📊 Tổng số ảnh YES cần kiểm tra: {total_img} ảnh")
+print("-" * 50)
+
+# --- 4. BẮT ĐẦU QUÉT ---
+sai_so = 0
+danh_sach_sai = []
+
+for filename in tqdm(image_files, desc="Dang quet YES (Model PRO)..."):
+    try:
+        img_path = os.path.join(FOLDER_YES, filename)
+
+        # A. Đọc ảnh MÀU (Quan trọng: Model mới dùng 3 kênh màu)
+        img_bgr = cv2.imread(img_path)
+        if img_bgr is None: continue
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB) # Chuyển sang RGB
+
+        # B. Gọi hàm xử lý xịn (Cắt sọ + Padding)
+        img_processed = ham_xu_ly_xin(img_rgb)
+
+        # C. Chuẩn hóa về 0-1 (Chia cho 255.0)
+        img_input = img_processed.astype('float32') / 255.0
+
+        # D. Thêm chiều batch (1, 128, 128, 3)
+        img_tensor = np.expand_dims(img_input, axis=0)
+
+        # E. Dự đoán
+        pred = model.predict(img_tensor, verbose=0)
+        score = pred[0][0]
+
+        # --- LOGIC KIỂM TRA ---
+        # Ảnh gốc là YES, nên nếu Score <= THRESHOLD (AI bảo NO) thì là SAI (Bỏ sót)
+        if score <= THRESHOLD:
+            sai_so += 1
+            confidence = (1 - score) * 100 # Độ tin cậy của việc phán sai
+
+            danh_sach_sai.append(f"{filename} (AI tin là NO: {confidence:.2f}%)")
+
+            # Copy ảnh sai ra folder
+            dst_path = os.path.join(OUTPUT_FOLDER, f"MISS_{filename}")
+            shutil.copy(img_path, dst_path)
+
+    except Exception as e:
+        print(f"Lỗi file {filename}: {e}")
+
+# --- 5. BÁO CÁO ---
+print("\n" + "="*50)
+print(f"🏁 ĐÃ HOÀN THÀNH QUÉT VỚI MODEL PRO!")
+print(f"❌ Số ảnh CÓ U mà AI bỏ sót: {sai_so} / {total_img}")
+print(f"📉 Tỷ lệ bỏ sót: {(sai_so/total_img)*100:.2f}%")
+print(f"📂 Xem các ca bị sót tại:\n   {OUTPUT_FOLDER}")
+print("="*50)
+
+if sai_so > 0:
+    print("Top 10 ca bị bỏ sót:")
+    for f in danh_sach_sai[:10]:
+        print(f" - {f}")

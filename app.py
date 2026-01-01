@@ -14,18 +14,29 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS "CYBER-BLUE" (ĐÃ CÂN CHỈNH LẠI KHOẢNG CÁCH) ---
+# --- 2. CSS "CYBER-BLUE" (ĐÃ FIX LỖI KHOẢNG TRẮNG ĐẦU TRANG) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap');
 
-    /* TỐI ƯU KHÔNG GIAN */
-    .block-container {
-        padding: 1rem 1rem !important;
-        max-width: 100% !important;
+    /* --- FIX LỖI KHOẢNG TRẮNG TO ĐÙNG Ở TRÊN --- */
+    /* 1. Ẩn hoàn toàn thanh Header của Streamlit để nó không chiếm chỗ */
+    [data-testid="stHeader"] {
+        display: none;
     }
-    header, footer {visibility: hidden;}
-    
+    /* 2. Đẩy nội dung chính sát lên nóc nhà */
+    .block-container {
+        padding-top: 0rem !important; /* Xóa khoảng cách trên */
+        padding-bottom: 0rem !important;
+        margin-top: 0px !important;
+    }
+    /* ------------------------------------------- */
+
+    /* TỐI ƯU THANH CUỘN */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #020408; }
+    ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 4px; }
+
     /* NỀN TỔNG THỂ */
     .stApp {
         background-color: #020408;
@@ -36,14 +47,13 @@ st.markdown("""
         font-family: 'Rajdhani', sans-serif;
     }
 
-    /* --- SIDEBAR --- */
+    /* SIDEBAR */
     [data-testid="stSidebar"] {
         background-color: #000000;
         border-right: 1px solid #1a1a1a;
-        box-shadow: 5px 0 20px rgba(0, 243, 255, 0.05);
     }
 
-    /* --- 1. TIÊU ĐỀ SIDEBAR --- */
+    /* HEADER SIDEBAR */
     .sidebar-header {
         font-family: 'Orbitron', sans-serif;
         font-size: 14px;
@@ -59,7 +69,7 @@ st.markdown("""
         padding-bottom: 2px;
     }
 
-    /* --- 2. BẢNG TRẠNG THÁI (DIAGNOSTICS) --- */
+    /* BẢNG DIAGNOSTICS (FIX LAYOUT) */
     .sys-container {
         background-color: #050505;
         border: 1px solid #00f3ff;
@@ -67,8 +77,8 @@ st.markdown("""
         padding: 10px;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1), inset 0 0 20px rgba(0, 243, 255, 0.05);
-        margin-top: 0px; /* Bỏ margin lớn để nó nằm sát đường kẻ hơn */
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        margin-top: 15px; 
     }
     
     .sys-container::before {
@@ -98,30 +108,16 @@ st.markdown("""
     
     .sys-label { color: #888; font-size: 11px; }
     .sys-value { color: #00f3ff; font-weight: bold; text-shadow: 0 0 5px #00f3ff; }
-    
     .blink { animation: blinker 1s step-start infinite; }
-    
-    @keyframes scanline {
-        0% { top: -10%; opacity: 0; }
-        10% { opacity: 0.5; }
-        90% { opacity: 0.5; }
-        100% { top: 110%; opacity: 0; }
-    }
+    @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
     @keyframes blinker { 50% { opacity: 0; } }
 
-    /* --- SELECTBOX --- */
+    /* WIDGETS */
     .stSelectbox div[data-baseweb="select"] > div {
         background-color: #050505 !important;
         border: 1px solid #00f3ff !important;
         color: #00f3ff !important;
     }
-    .stSelectbox div[data-baseweb="select"] span {
-        color: #00f3ff !important;
-        font-family: 'Orbitron', sans-serif;
-    }
-    .stSelectbox div[data-baseweb="select"] svg { fill: #00f3ff !important; }
-    
-    /* --- UPLOAD --- */
     [data-testid="stFileUploader"] section {
         background-color: #050505 !important;
         border: 1px dashed #00f3ff !important;
@@ -133,9 +129,36 @@ st.markdown("""
         border: 1px solid #00f3ff !important;
         font-family: 'Orbitron', sans-serif;
     }
-    [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] span { color: #555 !important; }
+    
+    /* NÚT SCAN */
+    div.stButton > button {
+        background: rgba(0, 243, 255, 0.1);
+        color: #00f3ff;
+        border: 2px solid #00f3ff;
+        height: 50px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 16px;
+        font-weight: 800;
+        width: 100%;
+        margin-top: 15px !important;
+        margin-bottom: 0px !important;
+        display: flex; justify-content: center; align-items: center;
+        transition: all 0.3s ease-in-out;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+        animation: pulse-scan 2s infinite;
+    }
+    div.stButton > button:hover {
+        background: rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+        color: #fff;
+    }
+    @keyframes pulse-scan {
+        0% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+        50% { box-shadow: 0 0 20px rgba(0, 243, 255, 0.5); border-color: rgba(0, 243, 255, 0.9); }
+        100% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+    }
 
-    /* --- TIÊU ĐỀ CHÍNH --- */
+    /* HEADER CHÍNH (Đẩy margin-top lên 0) */
     .mega-header {
         font-family: 'Orbitron', sans-serif;
         font-weight: 900;
@@ -146,90 +169,31 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         text-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
         margin-bottom: 20px;
+        margin-top: 0px !important; /* Đảm bảo không có khoảng cách thừa */
+        padding-top: 20px; /* Thêm chút padding để không bị cắt chữ */
         border-bottom: 1px solid #1a1a1a;
         padding-bottom: 15px;
     }
 
-    /* --- MONITOR FRAME --- */
+    /* RESULT & MONITOR */
     .monitor-frame {
-        background: rgba(0,0,0,0.7);
-        border: 1px solid #333;
-        border-radius: 4px;
-        padding: 5px;
-        position: relative;
-        box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        background: rgba(0,0,0,0.7); border: 1px solid #333;
+        border-radius: 4px; padding: 5px; position: relative;
     }
     .monitor-label {
-        position: absolute;
-        top: -10px;
-        left: 10px;
-        background: #020408;
-        padding: 0 8px;
-        color: #00f3ff;
-        font-size: 11px;
-        font-family: 'Orbitron', sans-serif;
-        border: 1px solid #333;
-        letter-spacing: 1px;
+        position: absolute; top: -10px; left: 10px;
+        background: #020408; padding: 0 8px;
+        color: #00f3ff; font-size: 11px;
+        font-family: 'Orbitron'; border: 1px solid #333;
     }
-    
-    /* --- KẾT QUẢ --- */
     .result-bar {
-        background: #0a0a0a;
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 15px 25px;
-        margin-top: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        background: #0a0a0a; border: 1px solid #333;
+        border-radius: 8px; padding: 15px 25px;
+        margin-top: 15px; display: flex;
+        justify-content: space-between; align-items: center;
     }
     .result-danger { color: #ff003c; font-family: 'Orbitron'; font-size: 22px; text-shadow: 0 0 10px #ff003c; animation: pulse 1s infinite; }
     .result-safe { color: #00f3ff; font-family: 'Orbitron'; font-size: 22px; text-shadow: 0 0 10px #00f3ff; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
-    /* --- NÚT SCAN CÂN ĐỐI --- */
-    div.stButton > button {
-        background: rgba(0, 243, 255, 0.1);
-        color: #00f3ff;
-        border: 2px solid #00f3ff;
-        height: 50px;
-        font-family: 'Orbitron', sans-serif;
-        font-size: 16px;
-        font-weight: 800;
-        width: 100%;
-        
-        /* CÂN ĐỐI KHOẢNG CÁCH TRÊN DƯỚI */
-        margin-top: 25px !important; 
-        margin-bottom: 25px !important;
-        
-        /* CANH GIỮA TUYỆT ĐỐI */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        
-        transition: all 0.3s ease-in-out;
-        box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
-        animation: pulse-scan 2s infinite;
-    }
-    div.stButton > button:hover {
-        background: rgba(0, 243, 255, 0.3);
-        box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
-        transform: scale(1.02);
-        color: #fff;
-        text-shadow: 0 0 10px #00f3ff;
-        border-color: #fff;
-    }
-    div.stButton > button p {
-        text-align: center;
-        width: 100%;
-        margin: 0; /* Xóa margin mặc định của thẻ p nếu có */
-    }
-    
-    @keyframes pulse-scan {
-        0% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
-        50% { box-shadow: 0 0 20px rgba(0, 243, 255, 0.5); border-color: rgba(0, 243, 255, 0.9); }
-        100% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -317,18 +281,13 @@ def overlay_heatmap(img, heatmap, alpha=0.4):
 
 # --- 4. GIAO DIỆN CHÍNH ---
 
-# --- SIDEBAR ---
+# --- SIDEBAR (THỨ TỰ SẮP XẾP CHUẨN) ---
 with st.sidebar:
-    # Logo
     st.markdown('<div style="font-family: Orbitron; font-size: 24px; color: #fff; text-align: center; margin-bottom: 20px;">NEURO<span style="color:#00f3ff">AI</span></div>', unsafe_allow_html=True)
     
     # 1. CORE
     st.markdown('<div class="sidebar-header">CHỌN BỘ XỬ LÝ (CORE)</div>', unsafe_allow_html=True)
-    model_option = st.selectbox(
-        "CORE",
-        ("Model PRO (Tách sọ)", "Model FINAL (Cơ bản)"),
-        label_visibility="collapsed"
-    )
+    model_option = st.selectbox("CORE", ("Model PRO (v2.0 - Tách sọ)", "Model FINAL (v1.0 - Cơ bản)"), label_visibility="collapsed")
     current_model_name = "PRO" if "PRO" in model_option else "FINAL"
     
     st.markdown("<br>", unsafe_allow_html=True)
@@ -337,13 +296,10 @@ with st.sidebar:
     st.markdown('<div class="sidebar-header">NHẬP DỮ LIỆU MRI</div>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
     
-    # 3. NÚT QUÉT (CÁCH ĐỀU TRÊN DƯỚI = CSS)
+    # 3. NÚT SCAN (DÍNH LIỀN UPLOAD)
     scan_btn = st.button("🚀 SCAN MRI")
 
-    # --- ĐƯỜNG KẺ NGĂN CÁCH ---
-    st.markdown("---")
-    
-    # 4. BẢNG TRẠNG THÁI (ĐÃ BỎ KHOẢNG TRỐNG THỪA)
+    # 4. DIAGNOSTICS (DÍNH LIỀN NÚT SCAN - ĐÃ BỎ DÒNG KẺ ---)
     st.markdown("""
         <div class="sys-container">
             <div style="text-align: center; color: #fff; font-size: 11px; margin-bottom: 10px; letter-spacing: 2px;">SYSTEM DIAGNOSTICS</div>
@@ -366,13 +322,12 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
 
-# --- MAIN SCREEN (GIỮ NGUYÊN) ---
+# --- MAIN SCREEN ---
 st.markdown('<div class="mega-header">NEURO-SCAN SYSTEM</div>', unsafe_allow_html=True)
 
 model = load_model_by_name(current_model_name)
 
 if uploaded_file is None:
-    # Màn hình chờ
     st.markdown("""
     <div style="height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
                 border: 1px dashed #333; border-radius: 8px; background: rgba(0, 0, 0, 0.5);">
@@ -382,15 +337,12 @@ if uploaded_file is None:
     """, unsafe_allow_html=True)
 
 else:
-    # Đọc ảnh
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     img_bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-    # Hiển thị 3 Cột Ảnh
     col1, col2, col3 = st.columns(3, gap="medium")
 
-    # Xử lý
     if current_model_name == "PRO":
         processed_img = ham_xu_ly_cho_PRO(img_rgb)
         img_for_display = processed_img
@@ -405,19 +357,16 @@ else:
         final_input_tensor = np.expand_dims(img_expanded, axis=0)
         proc_label = "GRAYSCALE"
 
-    # 1. RAW
     with col1:
         st.markdown(f'<div class="monitor-frame"><div class="monitor-label">01. ẢNH GỐC</div>', unsafe_allow_html=True)
         st.image(img_rgb, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. PROCESSED
     with col2:
         st.markdown(f'<div class="monitor-frame"><div class="monitor-label">02. XỬ LÝ: {proc_label}</div>', unsafe_allow_html=True)
         st.image(processed_img, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 3. AI SCAN
     with col3:
         placeholder = st.empty()
         placeholder.markdown(f"""
@@ -427,28 +376,22 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-    # --- KẾT QUẢ HIỂN THỊ NGAY DƯỚI ---
     result_placeholder = st.empty()
 
     if scan_btn:
-        # Dự đoán
         preds = model.predict(final_input_tensor)
         score = preds[0][0]
         
-        # Cập nhật Heatmap
         last_layer = get_last_conv_layer_name(model)
         if last_layer:
             heatmap = make_gradcam_heatmap_manual(final_input_tensor, model, last_layer)
             final_heatmap_img = overlay_heatmap(img_for_display, heatmap)
-            
             with col3:
                 placeholder.markdown(f'<div class="monitor-frame"><div class="monitor-label">03. BẢN ĐỒ NHIỆT</div>', unsafe_allow_html=True)
                 st.image(final_heatmap_img, use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-        # THANH KẾT QUẢ
         threshold = 0.2 if current_model_name == "PRO" else 0.5
-        
         if score > threshold:
             res_text = "PHÁT HIỆN: CÓ KHỐI U"
             res_class = "result-danger"
